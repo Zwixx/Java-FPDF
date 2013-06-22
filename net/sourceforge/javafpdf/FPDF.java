@@ -41,6 +41,7 @@ import java.util.Set;
 import javax.imageio.ImageIO;
 
 import net.sourceforge.javafpdf.util.Compressor;
+import net.sourceforge.javafpdf.util.ImageConverter;
 
 /**
  * Faithful Java port of <a href="http://www.fpdf.org">FPDF for PHP</a>.
@@ -490,66 +491,6 @@ public abstract class FPDF {
 				.replace("\\", "\\\\"); 
 	}
 
-	/**
-	 * Equivalent of PHP fread().
-	 * 
-	 * @throws IOException
-	 *             if the stream can not be read.
-	 */
-	protected char[] _fread(final InputStream f, final int length) throws IOException {
-		char[] chars = new char[length];
-		for (int i = 0; i < length; i++) {
-			int in = f.read();
-			chars[i] = (char) in;
-		}
-		return chars;
-	}
-
-	protected byte[] _freadb(final InputStream f, final int length) throws IOException {
-		byte[] bytes = new byte[length];
-		f.read(bytes);
-		return bytes;
-	}
-
-	/**
-	 * Reads bytes from a given stream and appends them to a given array, then
-	 * returns the combined array.
-	 */
-	protected byte[] _freadb(final InputStream f, final int length, final byte[] bytes) throws IOException {
-		byte[] b;
-		int offset;
-		if (bytes != null) {
-			b = new byte[bytes.length + length];
-			for (int i = 0; i < bytes.length; i++) {
-				b[i] = bytes[i];
-			}
-			offset = bytes.length;
-		} else {
-			b = new byte[length];
-			offset = 0;
-		}
-		f.read(b, offset, length);
-		return b;
-	}
-
-	/**
-	 * Read a 4-byte integer from file
-	 * 
-	 * @throws IOException
-	 *             if the stream can not be read.
-	 */
-	protected int _freadint(final InputStream f) throws IOException {
-		// We'll assume big-endian encoding here.
-		int a = 0;
-		for (int i = 0; i < 4; i++) {
-			int shift = (4 - 1 - i) * 8;
-			int in = f.read();
-			byte b = (byte) in;
-			a += (b & 0x000000FF) << shift;
-		}
-		return a;
-	}
-
 	/** Begin a new object */
 	protected void _newobj() {
 		this.n++;
@@ -589,149 +530,6 @@ public abstract class FPDF {
 				this.buffer.add((s.replace('€', (char) 128) + '\n').getBytes());
 				e.printStackTrace();
 			}
-		}
-	}
-
-	protected Map<String, Object> _parsejpg(final File file) {
-		BufferedImage img = null;
-		try {
-			img = ImageIO.read(file);
-			
-			Map<String, Object> image = new HashMap<String, Object>();
-			image.put("w", Integer.valueOf(img.getWidth())); 
-			image.put("h", Integer.valueOf(img.getHeight())); 
-			String colspace;
-			if (img.getColorModel().getColorSpace().getType() == ColorSpace.TYPE_CMYK) {
-				colspace = "DeviceCMYK";
-			} else if (img.getColorModel().getColorSpace().getType() == ColorSpace.TYPE_RGB) {
-				colspace = "DeviceRGB";
-			} else if (img.getColorModel().getColorSpace().getType() == ColorSpace.TYPE_GRAY) {
-				colspace = "DeviceGray";
-			} else {
-				throw new IllegalArgumentException("Ungültiges Farbmodell " + img.getColorModel().getColorSpace().getType());
-			}
-			image.put("cs", colspace); 
-			image.put("bpc", 8); 
-			image.put("f", "DCTDecode"); 
-			
-			InputStream f = new FileInputStream(file);
-			byte[] data = new byte[f.available()];
-			f.read(data, 0, f.available());
-			f.close();
-			image.put("data", data); 
-			return image;
-		} catch (IOException e) {
-			throw new RuntimeException(e);
-		}
-	}
-	
-	/** Extract info from a PNG file */
-	protected Map<String, Object> _parsepng(final File file) throws IOException {
-		InputStream f = new FileInputStream(file);
-		try {
-			// Check signature
-			char[] sig = new char[] { 137, 'P', 'N', 'G', 13, 10, 26, 10 };
-			for (int i = 0; i < sig.length; i++) {
-				int in = f.read();
-				char c = (char) in;
-				if (c != sig[i]) {
-					throw new IOException("Not a PNG file: " + file); 
-				}
-			}
-			this._fread(f, 4);
-			// Read header chunk
-			char[] chunk = new char[] { 'I', 'H', 'D', 'R' };
-			for (int i = 0; i < chunk.length; i++) {
-				int in = f.read();
-				char c = (char) in;
-				if (c != chunk[i]) {
-					throw new IOException("Not a PNG file: " + file); 
-				}
-			}
-			int w = this._freadint(f);
-			int h = this._freadint(f);
-			int bpc = f.read();
-			if (bpc > 8) {
-				throw new IOException("16-bit depth not supported: " + file); 
-			}
-			int ct = f.read();
-			String colspace;
-			if (ct == 0) {
-				colspace = "DeviceGray"; 
-			} else if (ct == 2) {
-				colspace = "DeviceRGB"; 
-			} else if (ct == 3) {
-				colspace = "Indexed"; 
-			} else {
-				throw new IOException("Alpha channel not supported: " + file); 
-			}
-			if (f.read() != 0) {
-				throw new IOException("Unknown compression method: " + file); 
-			}
-			if (f.read() != 0) {
-				throw new IOException("Unknown filter method: " + file); 
-			}
-			if (f.read() != 0) {
-				throw new IOException("Interlacing not supported: " + file); 
-			}
-			this._fread(f, 4);
-			StringBuilder sb = new StringBuilder();
-			sb.append("/DecodeParms <</Predictor 15 /Colors ").append( 
-					ct == 2 ? 3 : 1).append(" /BitsPerComponent ").append(bpc) 
-					.append(" /Columns ").append(w).append(">>"); 
-			String parms = sb.toString();
-			// Scan chunks looking for palette, transparency and image data
-			byte[] pal = null;
-			byte[] trns = null;
-			byte[] data = null;
-			do {
-				int n = this._freadint(f);
-				String type = new String(this._fread(f, 4));
-				if (type.equals("PLTE")) { 
-					// Read palette
-					pal = this._freadb(f, n);
-					this._fread(f, 4);
-				} else if (type.equals("tRNS")) { 
-					// Read transparency info
-					byte[] t = this._freadb(f, n);
-					if (ct == 0) {
-						trns = new byte[] { t[1] };
-					} else if (ct == 2) {
-						trns = new byte[] { t[1], t[3], t[5] };
-					} else {
-						int pos = new String(t).indexOf(0);
-						if (pos != -1) {
-							trns = new byte[] { (byte) pos };
-						}
-					}
-					this._fread(f, 4);
-				} else if (type.equals("IDAT")) { 
-					// Read image data block
-					data = this._freadb(f, n, data);
-					this._fread(f, 4);
-				} else if (type.equals("IEND")) { 
-					break;
-				} else {
-					this._fread(f, n + 4);
-				}
-			} while (f.available() > 0);
-			if (colspace.equals("Indexed") && (pal == null)) { 
-				throw new IOException("Missing palette in " + file); 
-			}
-			Map<String, Object> image = new HashMap<String, Object>();
-			image.put("w", Integer.valueOf(w)); 
-			image.put("h", Integer.valueOf(h)); 
-			image.put("cs", colspace); 
-			image.put("bpc", Integer.valueOf(bpc)); 
-			image.put("f", "FlateDecode"); 
-			image.put("parms", parms); 
-			image.put("pal", pal); 
-			image.put("trns", trns); 
-			image.put("data", data); 
-			image.put("i", Integer.valueOf(this.images.size() + 1)); 
-			return image;
-		} finally {
-			f.close();
 		}
 	}
 
@@ -1829,10 +1627,13 @@ public abstract class FPDF {
 			} else {
 				type1 = type;
 			}
+			ImageConverter img = new ImageConverter(file);
 			if (ImageType.PNG.equals(type1)) {
-				info = this._parsepng(new File(file));
+				info = img.parseimage(ImageType.PNG);
 			} else if (ImageType.JPEG.equals(type1)) {
-				info = this._parsejpg(new File(file));
+				info = img.parseimage(ImageType.JPEG);
+			} else if (ImageType.GIF.equals(type1)) {
+				info = img.parseimage(ImageType.GIF);
 			} else {
 				throw new IOException("Image type not supported."); 
 			}

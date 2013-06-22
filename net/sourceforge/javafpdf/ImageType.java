@@ -32,5 +32,6 @@ public enum ImageType {
 	/** Portable Network Graphics image. */
 	PNG,
 	/** Joint Photographic Experts Group image. */
-	JPEG;
+	JPEG,
+	GIF;
 }
