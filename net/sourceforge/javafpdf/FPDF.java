@@ -33,6 +33,7 @@ import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -347,20 +348,20 @@ public class FPDF {
 		this.ws = 0;
 		// Standard fonts
 		this.coreFonts = new HashMap<String, String>();
-		this.coreFonts.put("courier", "Courier"); 
-		this.coreFonts.put("courierB", "Courier-Bold"); 
-		this.coreFonts.put("courierI", "Courier-Oblique"); 
-		this.coreFonts.put("courierBI", "Courier-BoldOblique"); 
-		this.coreFonts.put("helvetica", "Helvetica"); 
-		this.coreFonts.put("helveticaB", "Helvetica-Bold"); 
-		this.coreFonts.put("helveticaI", "Helvetica-Oblique"); 
-		this.coreFonts.put("helveticaBI", "Helvetica-BoldOblique"); 
-		this.coreFonts.put("times", "Times-Roman"); 
-		this.coreFonts.put("timesB", "Times-Bold"); 
-		this.coreFonts.put("timesI", "Times-Italic"); 
-		this.coreFonts.put("timesBI", "Times-BoldItalic"); 
-		this.coreFonts.put("symbol", "Symbol"); 
-		this.coreFonts.put("zapfdingbats", "ZapfDingbats"); 
+		this.coreFonts.put(FontFamily.COURIER.getKey(), "Courier"); 
+		this.coreFonts.put(FontFamily.COURIER.getBoldKey(), "Courier-Bold"); 
+		this.coreFonts.put(FontFamily.COURIER.getItalicKey(), "Courier-Oblique"); 
+		this.coreFonts.put(FontFamily.COURIER.getBoldItalicKey(), "Courier-BoldOblique"); 
+		this.coreFonts.put(FontFamily.HELVETICA.getKey(), "Helvetica"); 
+		this.coreFonts.put(FontFamily.HELVETICA.getBoldKey(), "Helvetica-Bold"); 
+		this.coreFonts.put(FontFamily.HELVETICA.getItalicKey(), "Helvetica-Oblique"); 
+		this.coreFonts.put(FontFamily.HELVETICA.getBoldItalicKey(), "Helvetica-BoldOblique"); 
+		this.coreFonts.put(FontFamily.TIMES.getKey(), "Times-Roman"); 
+		this.coreFonts.put(FontFamily.TIMES.getBoldKey(), "Times-Bold"); 
+		this.coreFonts.put(FontFamily.TIMES.getItalicKey(), "Times-Italic"); 
+		this.coreFonts.put(FontFamily.TIMES.getBoldItalicKey(), "Times-BoldItalic"); 
+		this.coreFonts.put(FontFamily.SYMBOL.getKey(), "Symbol"); 
+		this.coreFonts.put(FontFamily.ZAPF_DINGBATS.getKey(), "ZapfDingbats"); 
 		// Scale factor
 		this.k = unit;
 		// Page format
@@ -2364,6 +2365,55 @@ public class FPDF {
 	public void setFillColor(final int r, final int g, final int b) {
 		this.setFillColor(new Color(r, g, b));
 	}
+        
+	/**
+	 * Select a font; size given in points.
+	 * 
+	 * @param family
+	 *            the font family
+	 * @param size
+	 *            the font size in points
+	 * @throws IOException
+	 *             if the font family is invalid.
+	 */
+	public void setFont(FontFamily family, float size) throws IOException {
+            setFont(family.getKey(), null, size);
+        }
+
+	/**
+	 * Select a font; size given in points.
+	 * 
+	 * @param family
+	 *            the font family
+	 * @param style
+	 *            the font style
+	 * @param size
+	 *            the font size in points
+	 * @throws IOException
+	 *             if the font family is invalid.
+	 */
+	public void setFont(FontFamily family, FontStyle style, float size) throws IOException {
+            LinkedHashSet<FontStyle> set = new LinkedHashSet<FontStyle>();
+            set.add(style);
+            
+            setFont(family.getKey(), set, size);
+        }
+
+	/**
+	 * Select a font; size given in points.
+	 * 
+	 * @param family
+	 *            the font family
+	 * @param style
+	 *            the font style
+	 * @param size
+	 *            the font size in points
+	 * @throws IOException
+	 *             if the font family is invalid.
+	 */
+	public void setFont(FontFamily family, Set<FontStyle> style, float size) throws IOException {
+            setFont(family.getKey(), style, size);
+        }
 
 	/**
 	 * Select a font; size given in points.
@@ -2383,10 +2433,9 @@ public class FPDF {
 		} else {
 			family = family.toLowerCase();
 		}
-		if ("arial".equals(family)) { 
-			family = "helvetica"; 
-		} else if ("symbol".equals(family) 
-				|| "zapfdingbats".equals(family)) { 
+		if (FontFamily.ARIAL.getKey().equals(family)) { 
+			family = FontFamily.HELVETICA.getKey(); 
+		} else if (FontFamily.SYMBOL.getKey().equals(family) || FontFamily.ZAPF_DINGBATS.getKey().equals(family)) { 
 			style = null;
 		}
 		if ((style != null) && style.contains(FontStyle.UNDERLINE)) {
