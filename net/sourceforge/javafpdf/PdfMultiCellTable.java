@@ -5,8 +5,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 public abstract class PdfMultiCellTable extends FPDF {
-	private List<Integer> widths = new ArrayList<>();
-	private List<Alignment> alignments = new ArrayList<>();
+	private List<Integer> widths = new ArrayList<Integer>();
+	private List<Alignment> alignments = new ArrayList<Alignment>();
 
 	public void setWidths(List<Integer> w) {
 		// Set the array of column widths

@@ -51,7 +51,7 @@ import net.sourceforge.javafpdf.util.ImageConverter;
  * @since 1 Mar 2008
  * @version 1.53 / $Revision: 1.10 $
  */
-public abstract class FPDF {
+public class FPDF {
 	/** Character width. Used to be global. */
 	private static Map<String, Charwidths> charwidths;
 
@@ -509,12 +509,15 @@ public abstract class FPDF {
 	protected void _out(final String s) {
 		// Add a line to the document
 		if (this.state == PDFCreationState.PAGE) {
-			try {
-				this.pages.get(Integer.valueOf(this.page)).add((s + '\n').getBytes("ISO-8859-1"));
-			} catch (UnsupportedEncodingException e) {
-				this.pages.get(Integer.valueOf(this.page)).add((s + '\n').getBytes());
-				e.printStackTrace();
-			}
+                        final String st = (s != null ? s : "") + '\n';
+                        byte[] bytes;
+                        try {
+                            bytes = new String(st.getBytes(), "ISO-8859-1" ).getBytes("ISO-8859-1");
+                        } catch (UnsupportedEncodingException e) {
+                            bytes = st.getBytes();
+                            e.printStackTrace();
+                        }
+                        this.pages.get(Integer.valueOf(this.page)).add(bytes);
 		} else {
 			/*
 			 * NOTE This is a hack put in place because Java converts to true
@@ -1549,10 +1552,11 @@ public abstract class FPDF {
 	}
 
 	/**
-	 * Method to be called when printing the footer. This should be overridden
-	 * in your own class.
+	 * Method to be called when printing the footer. This method can be 
+         * overridden in your own class.
 	 */
-	public abstract void Footer();
+	public void Footer(){
+        }
 
 	/**
 	 * Get width of a string in the current font
@@ -1589,10 +1593,11 @@ public abstract class FPDF {
 	}
 
 	/**
-	 * Method to be called when printing the header. This method should be
-	 * overriden in your own class.
+	 * Method to be called when printing the header. This method can be 
+         * overridden in your own class.
 	 */
-	public abstract void Header();
+	public void Header(){
+        }
 
 	/**
 	 * Put an image on the page
