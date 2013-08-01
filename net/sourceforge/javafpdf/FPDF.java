@@ -21,13 +21,9 @@
  */
 package net.sourceforge.javafpdf;
 
-import java.awt.color.ColorSpace;
-import java.awt.image.BufferedImage;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
@@ -37,8 +33,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
-
-import javax.imageio.ImageIO;
 
 import net.sourceforge.javafpdf.util.Compressor;
 import net.sourceforge.javafpdf.util.ImageConverter;
@@ -53,7 +47,7 @@ import net.sourceforge.javafpdf.util.ImageConverter;
  */
 public abstract class FPDF {
 	/** Character width. Used to be global. */
-	private static Map<String, Charwidths> charwidths;
+	private static Map<String, Charwidths> charwidths = new HashMap<String, Charwidths>();
 
 	/** Point. Base unit. */
 	public static final float PT = 1f;
@@ -66,10 +60,6 @@ public abstract class FPDF {
 
 	/** Centimeter. 72 / 2.54 points. */
 	public static final float CM = (72 / 2.54f);
-
-	static {
-		charwidths = new HashMap<String, Charwidths>();
-	}
 
 	protected static Charwidths getCharwidths(final String font) throws IOException {
 		if (charwidths.get(font) == null) {
@@ -238,13 +228,7 @@ public abstract class FPDF {
 	/** PDF version number */
 	protected String pdfVersion;
 
-	private static final String revision;
-
-	static {
-		// Some CVS magic to find out the revision of this class
-		String rev = "$Revision: 1.10 $"; 
-		revision = rev.substring(11, rev.length() - 2);
-	}
+	private static final String revision = "1.10";
 
 	/**
 	 * Default Constructor. Creates an FPDF object with Portrait orientation, MM
