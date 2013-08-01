@@ -21,13 +21,10 @@
  */
 package net.sourceforge.javafpdf;
 
-import java.awt.color.ColorSpace;
-import java.awt.image.BufferedImage;
+import java.awt.Color;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
@@ -39,7 +36,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
-import javax.imageio.ImageIO;
 
 import net.sourceforge.javafpdf.util.Compressor;
 import net.sourceforge.javafpdf.util.ImageConverter;
@@ -2304,13 +2300,13 @@ public class FPDF {
 	 *            a Color value.
 	 */
 	public void setDrawColor(final Color color) {
-		if (color.isGrayscale()) {
-			this.drawColor = String.format(Locale.ENGLISH, "%.3f G", Float.valueOf(color.getV() / 255f)); 
+		if (isGrayscale(color)) {
+			this.drawColor = String.format(Locale.ENGLISH, "%.3f G", Float.valueOf(color.getRed()/ 255f)); 
 		} else {
 			this.drawColor = String.format(Locale.ENGLISH,
 					"%.3f %.3f %.3f RG", 
-					Float.valueOf(color.getR() / 255f), Float.valueOf(color.getG() / 255f),
-					Float.valueOf(color.getB() / 255f));
+					Float.valueOf(color.getRed()/ 255f), Float.valueOf(color.getGreen()/ 255f),
+					Float.valueOf(color.getBlue()/ 255f));
 		}
 		if (this.page > 0) {
 			this._out(this.drawColor);
@@ -2338,13 +2334,13 @@ public class FPDF {
 	 *            a Color value
 	 */
 	public void setFillColor(final Color color) {
-		if (color.isGrayscale()) {
-			this.fillColor = String.format(Locale.ENGLISH, "%.3f g", Float.valueOf(color.getV() / 255f)); 
+		if (isGrayscale(color)) {
+			this.fillColor = String.format(Locale.ENGLISH, "%.3f g", Float.valueOf(color.getRed()/ 255f)); 
 		} else {
 			this.fillColor = String.format(Locale.ENGLISH,
 					"%.3f %.3f %.3f rg", 
-					Float.valueOf(color.getR() / 255f), Float.valueOf(color.getG() / 255f),
-					Float.valueOf(color.getB() / 255f));
+					Float.valueOf(color.getRed()/ 255f), Float.valueOf(color.getGreen()/ 255f),
+					Float.valueOf(color.getBlue()/ 255f));
 		}
 		this.colorFlag = (this.fillColor != this.textColor);
 		if (this.page > 0) {
@@ -2561,13 +2557,12 @@ public class FPDF {
 
 	/** Set color for text */
 	public void setTextColor(final Color color) {
-		if (color.isGrayscale()) {
-			this.textColor = String.format(Locale.ENGLISH, "%.3f g", Float.valueOf(color.getV() / 255f)); 
+		if (isGrayscale(color)) {
+			this.textColor = String.format(Locale.ENGLISH, "%.3f g", Float.valueOf(color.getRed()/255f)); 
 		} else {
 			this.textColor = String.format(Locale.ENGLISH,
 					"%.3f %.3f %.3f rg", 
-					Float.valueOf(color.getR() / 255f), Float.valueOf(color.getG() / 255f),
-					Float.valueOf(color.getB() / 255f));
+					Float.valueOf(color.getRed()/ 255f), Float.valueOf(color.getGreen()/ 255f), Float.valueOf(color.getBlue()/ 255f));
 		}
 		this.colorFlag = (this.fillColor != this.textColor);
 	}
@@ -2575,6 +2570,16 @@ public class FPDF {
 	/** Set color for text */
 	public void setTextColor(final int r, final int g, final int b) {
 		this.setTextColor(new Color(r, g, b));
+	}
+        
+        /**
+	 * Checks whether the color is grayscale.
+	 * 
+	 * @return <code>true</code> if all three components of the color are identical;
+	 *         <code>false</code> otherwise.
+	 */
+        private boolean isGrayscale(Color color) {
+		return ((color.getBlue() == color.getGreen()) && (color.getBlue() == color.getRed()));
 	}
 
 	/** Title of document */
