@@ -21,24 +21,21 @@
  */
 package net.sourceforge.javafpdf;
 
-import java.awt.color.ColorSpace;
-import java.awt.image.BufferedImage;
+import java.awt.Color;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
-import javax.imageio.ImageIO;
 
 import net.sourceforge.javafpdf.util.Compressor;
 import net.sourceforge.javafpdf.util.ImageConverter;
@@ -51,7 +48,7 @@ import net.sourceforge.javafpdf.util.ImageConverter;
  * @since 1 Mar 2008
  * @version 1.53 / $Revision: 1.10 $
  */
-public abstract class FPDF {
+public class FPDF {
 	/** Character width. Used to be global. */
 	private static Map<String, Charwidths> charwidths;
 
@@ -347,20 +344,20 @@ public abstract class FPDF {
 		this.ws = 0;
 		// Standard fonts
 		this.coreFonts = new HashMap<String, String>();
-		this.coreFonts.put("courier", "Courier"); 
-		this.coreFonts.put("courierB", "Courier-Bold"); 
-		this.coreFonts.put("courierI", "Courier-Oblique"); 
-		this.coreFonts.put("courierBI", "Courier-BoldOblique"); 
-		this.coreFonts.put("helvetica", "Helvetica"); 
-		this.coreFonts.put("helveticaB", "Helvetica-Bold"); 
-		this.coreFonts.put("helveticaI", "Helvetica-Oblique"); 
-		this.coreFonts.put("helveticaBI", "Helvetica-BoldOblique"); 
-		this.coreFonts.put("times", "Times-Roman"); 
-		this.coreFonts.put("timesB", "Times-Bold"); 
-		this.coreFonts.put("timesI", "Times-Italic"); 
-		this.coreFonts.put("timesBI", "Times-BoldItalic"); 
-		this.coreFonts.put("symbol", "Symbol"); 
-		this.coreFonts.put("zapfdingbats", "ZapfDingbats"); 
+		this.coreFonts.put(FontFamily.COURIER.getKey(), "Courier"); 
+		this.coreFonts.put(FontFamily.COURIER.getBoldKey(), "Courier-Bold"); 
+		this.coreFonts.put(FontFamily.COURIER.getItalicKey(), "Courier-Oblique"); 
+		this.coreFonts.put(FontFamily.COURIER.getBoldItalicKey(), "Courier-BoldOblique"); 
+		this.coreFonts.put(FontFamily.HELVETICA.getKey(), "Helvetica"); 
+		this.coreFonts.put(FontFamily.HELVETICA.getBoldKey(), "Helvetica-Bold"); 
+		this.coreFonts.put(FontFamily.HELVETICA.getItalicKey(), "Helvetica-Oblique"); 
+		this.coreFonts.put(FontFamily.HELVETICA.getBoldItalicKey(), "Helvetica-BoldOblique"); 
+		this.coreFonts.put(FontFamily.TIMES.getKey(), "Times-Roman"); 
+		this.coreFonts.put(FontFamily.TIMES.getBoldKey(), "Times-Bold"); 
+		this.coreFonts.put(FontFamily.TIMES.getItalicKey(), "Times-Italic"); 
+		this.coreFonts.put(FontFamily.TIMES.getBoldItalicKey(), "Times-BoldItalic"); 
+		this.coreFonts.put(FontFamily.SYMBOL.getKey(), "Symbol"); 
+		this.coreFonts.put(FontFamily.ZAPF_DINGBATS.getKey(), "ZapfDingbats"); 
 		// Scale factor
 		this.k = unit;
 		// Page format
@@ -509,12 +506,15 @@ public abstract class FPDF {
 	protected void _out(final String s) {
 		// Add a line to the document
 		if (this.state == PDFCreationState.PAGE) {
-			try {
-				this.pages.get(Integer.valueOf(this.page)).add((s + '\n').getBytes("ISO-8859-1"));
-			} catch (UnsupportedEncodingException e) {
-				this.pages.get(Integer.valueOf(this.page)).add((s + '\n').getBytes());
-				e.printStackTrace();
-			}
+                        final String st = (s != null ? s : "") + '\n';
+                        byte[] bytes;
+                        try {
+                            bytes = new String(st.getBytes(), "ISO-8859-1" ).getBytes("ISO-8859-1");
+                        } catch (UnsupportedEncodingException e) {
+                            bytes = st.getBytes();
+                            e.printStackTrace();
+                        }
+                        this.pages.get(Integer.valueOf(this.page)).add(bytes);
 		} else {
 			/*
 			 * NOTE This is a hack put in place because Java converts to true
@@ -1549,10 +1549,11 @@ public abstract class FPDF {
 	}
 
 	/**
-	 * Method to be called when printing the footer. This should be overridden
-	 * in your own class.
+	 * Method to be called when printing the footer. This method can be 
+         * overridden in your own class.
 	 */
-	public abstract void Footer();
+	public void Footer(){
+        }
 
 	/**
 	 * Get width of a string in the current font
@@ -1589,10 +1590,11 @@ public abstract class FPDF {
 	}
 
 	/**
-	 * Method to be called when printing the header. This method should be
-	 * overriden in your own class.
+	 * Method to be called when printing the header. This method can be 
+         * overridden in your own class.
 	 */
-	public abstract void Header();
+	public void Header(){
+        }
 
 	/**
 	 * Put an image on the page
@@ -2298,13 +2300,13 @@ public abstract class FPDF {
 	 *            a Color value.
 	 */
 	public void setDrawColor(final Color color) {
-		if (color.isGrayscale()) {
-			this.drawColor = String.format(Locale.ENGLISH, "%.3f G", Float.valueOf(color.getV() / 255f)); 
+		if (isGrayscale(color)) {
+			this.drawColor = String.format(Locale.ENGLISH, "%.3f G", Float.valueOf(color.getRed()/ 255f)); 
 		} else {
 			this.drawColor = String.format(Locale.ENGLISH,
 					"%.3f %.3f %.3f RG", 
-					Float.valueOf(color.getR() / 255f), Float.valueOf(color.getG() / 255f),
-					Float.valueOf(color.getB() / 255f));
+					Float.valueOf(color.getRed()/ 255f), Float.valueOf(color.getGreen()/ 255f),
+					Float.valueOf(color.getBlue()/ 255f));
 		}
 		if (this.page > 0) {
 			this._out(this.drawColor);
@@ -2332,13 +2334,13 @@ public abstract class FPDF {
 	 *            a Color value
 	 */
 	public void setFillColor(final Color color) {
-		if (color.isGrayscale()) {
-			this.fillColor = String.format(Locale.ENGLISH, "%.3f g", Float.valueOf(color.getV() / 255f)); 
+		if (isGrayscale(color)) {
+			this.fillColor = String.format(Locale.ENGLISH, "%.3f g", Float.valueOf(color.getRed()/ 255f)); 
 		} else {
 			this.fillColor = String.format(Locale.ENGLISH,
 					"%.3f %.3f %.3f rg", 
-					Float.valueOf(color.getR() / 255f), Float.valueOf(color.getG() / 255f),
-					Float.valueOf(color.getB() / 255f));
+					Float.valueOf(color.getRed()/ 255f), Float.valueOf(color.getGreen()/ 255f),
+					Float.valueOf(color.getBlue()/ 255f));
 		}
 		this.colorFlag = (this.fillColor != this.textColor);
 		if (this.page > 0) {
@@ -2359,6 +2361,55 @@ public abstract class FPDF {
 	public void setFillColor(final int r, final int g, final int b) {
 		this.setFillColor(new Color(r, g, b));
 	}
+        
+	/**
+	 * Select a font; size given in points.
+	 * 
+	 * @param family
+	 *            the font family
+	 * @param size
+	 *            the font size in points
+	 * @throws IOException
+	 *             if the font family is invalid.
+	 */
+	public void setFont(FontFamily family, float size) throws IOException {
+            setFont(family.getKey(), null, size);
+        }
+
+	/**
+	 * Select a font; size given in points.
+	 * 
+	 * @param family
+	 *            the font family
+	 * @param style
+	 *            the font style
+	 * @param size
+	 *            the font size in points
+	 * @throws IOException
+	 *             if the font family is invalid.
+	 */
+	public void setFont(FontFamily family, FontStyle style, float size) throws IOException {
+            LinkedHashSet<FontStyle> set = new LinkedHashSet<FontStyle>();
+            set.add(style);
+            
+            setFont(family.getKey(), set, size);
+        }
+
+	/**
+	 * Select a font; size given in points.
+	 * 
+	 * @param family
+	 *            the font family
+	 * @param style
+	 *            the font style
+	 * @param size
+	 *            the font size in points
+	 * @throws IOException
+	 *             if the font family is invalid.
+	 */
+	public void setFont(FontFamily family, Set<FontStyle> style, float size) throws IOException {
+            setFont(family.getKey(), style, size);
+        }
 
 	/**
 	 * Select a font; size given in points.
@@ -2378,10 +2429,9 @@ public abstract class FPDF {
 		} else {
 			family = family.toLowerCase();
 		}
-		if ("arial".equals(family)) { 
-			family = "helvetica"; 
-		} else if ("symbol".equals(family) 
-				|| "zapfdingbats".equals(family)) { 
+		if (FontFamily.ARIAL.getKey().equals(family)) { 
+			family = FontFamily.HELVETICA.getKey(); 
+		} else if (FontFamily.SYMBOL.getKey().equals(family) || FontFamily.ZAPF_DINGBATS.getKey().equals(family)) { 
 			style = null;
 		}
 		if ((style != null) && style.contains(FontStyle.UNDERLINE)) {
@@ -2507,13 +2557,12 @@ public abstract class FPDF {
 
 	/** Set color for text */
 	public void setTextColor(final Color color) {
-		if (color.isGrayscale()) {
-			this.textColor = String.format(Locale.ENGLISH, "%.3f g", Float.valueOf(color.getV() / 255f)); 
+		if (isGrayscale(color)) {
+			this.textColor = String.format(Locale.ENGLISH, "%.3f g", Float.valueOf(color.getRed()/255f)); 
 		} else {
 			this.textColor = String.format(Locale.ENGLISH,
 					"%.3f %.3f %.3f rg", 
-					Float.valueOf(color.getR() / 255f), Float.valueOf(color.getG() / 255f),
-					Float.valueOf(color.getB() / 255f));
+					Float.valueOf(color.getRed()/ 255f), Float.valueOf(color.getGreen()/ 255f), Float.valueOf(color.getBlue()/ 255f));
 		}
 		this.colorFlag = (this.fillColor != this.textColor);
 	}
@@ -2521,6 +2570,16 @@ public abstract class FPDF {
 	/** Set color for text */
 	public void setTextColor(final int r, final int g, final int b) {
 		this.setTextColor(new Color(r, g, b));
+	}
+        
+        /**
+	 * Checks whether the color is grayscale.
+	 * 
+	 * @return <code>true</code> if all three components of the color are identical;
+	 *         <code>false</code> otherwise.
+	 */
+        private boolean isGrayscale(Color color) {
+		return ((color.getBlue() == color.getGreen()) && (color.getBlue() == color.getRed()));
 	}
 
 	/** Title of document */
