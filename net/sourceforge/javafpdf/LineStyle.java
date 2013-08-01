@@ -21,6 +21,8 @@
  */
 package net.sourceforge.javafpdf;
 
+import java.awt.Color;
+
 /**
  * DOCME
  * 
