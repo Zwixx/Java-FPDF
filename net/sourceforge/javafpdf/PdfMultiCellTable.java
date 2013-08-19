@@ -1,23 +1,42 @@
 package net.sourceforge.javafpdf;
 
+/**
+ * Extends the Java-FPDF with table functionality. Based on mctable.php
+ * 
+ * @author Olivier Plathey (original PHP)
+ * @author Christian Froehlich
+ */
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-public abstract class PdfMultiCellTable extends FPDF {
+public class PdfMultiCellTable extends FPDF {
 	private List<Integer> widths = new ArrayList<Integer>();
 	private List<Alignment> alignments = new ArrayList<Alignment>();
 
-	public void setWidths(List<Integer> w) {
-		// Set the array of column widths
-		this.widths = w;
+	/**
+	 * Set the array of column widths
+	 * @param widths The widths
+	 */
+	public void setWidths(List<Integer> widths) {
+		this.widths = widths;
 	}
 
-	public void setAligns(List<Alignment> a) {
-		// Set the array of column alignments
-		this.alignments = a;
+	/**
+	 * Set the array of column alignments
+	 * @param align The Aligments
+	 */
+	public void setAligns(List<Alignment> align) {
+		this.alignments = align;
 	}
 
+	/**
+	 * Adds a new row to the table. The count og the columns must be the same as the
+	 * Alidnments and the Widths
+	 * @param data The Array of the text strings.
+	 * @throws IOException If something goes wrong.
+	 */
 	public void row(List<String> data) throws IOException {
 		if (widths.size() != data.size()) {
 			throw new IllegalArgumentException("The number of rows (" + data.size()
@@ -87,21 +106,31 @@ public abstract class PdfMultiCellTable extends FPDF {
 		super(orientation);
 	}
 
-	private void CheckPageBreak(float h) throws IOException {
-		// If the height h would cause an overflow, add a new page immediately
-		if (this.getY() + h > this.pageBreakTrigger)
+	/**
+	 * If the height would cause an overflow, add a new page immediately
+	 * @param height The height of the cell
+	 * @throws IOException If something goes wrong.
+	 */
+	private void CheckPageBreak(float height) throws IOException {
+		if (this.getY() + height > this.pageBreakTrigger)
 			this.addPage(this.currentOrientation);
 	}
-
-	private int NbLines(float w, String txt) {
+	
+	/**
+	 * Computes the number of lines a MultiCell of width will take
+	 * @param width The Cell width
+	 * @param txt The text
+	 * @return number of Lines needed for this text.
+	 */
+	private int NbLines(float width, String txt) {
 		if (this.currentFont == null) {
 			throw new PDFCreationError("No default Font. Use SetFont to set a default Font.");
 		}
-		// Computes the number of lines a MultiCell of width w will take
 		Font cw = this.currentFont;
-		if (w == 0)
-			w = this.w - this.rMargin - this.x;
-		float wmax = (w - 2 * this.cMargin) * 1000 / this.fontSize;
+		if (width == 0) {
+			width = this.w - this.rMargin - this.x;
+		}
+		float wmax = (width - 2 * this.cMargin) * 1000 / this.fontSize;
 		if (txt == null) {
 			txt = "";
 		}

@@ -1,5 +1,11 @@
 package net.sourceforge.javafpdf.util;
 
+/**
+ * Special function for reading a File. Name-compatible with PHP
+ * 
+ * @author Christian Froehlich
+ */
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;

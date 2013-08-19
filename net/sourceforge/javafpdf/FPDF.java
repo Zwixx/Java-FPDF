@@ -34,10 +34,13 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 
-
+import net.sourceforge.javafpdf.Font.Type;
 import net.sourceforge.javafpdf.util.Compressor;
+import net.sourceforge.javafpdf.util.FontInfo;
+import net.sourceforge.javafpdf.util.FontInfoRequest;
 import net.sourceforge.javafpdf.util.ImageConverter;
 
 /**
@@ -45,6 +48,7 @@ import net.sourceforge.javafpdf.util.ImageConverter;
  * 
  * @author Olivier Plathey
  * @author Alan Plum
+ * 
  * @since 1 Mar 2008
  * @version 1.53 / $Revision: 1.10 $
  */
@@ -344,6 +348,10 @@ public class FPDF {
 		this.ws = 0;
 		// Standard fonts
 		this.coreFonts = new HashMap<String, String>();
+		this.coreFonts.put(FontFamily.ARIAL.getKey(), "Arial"); 
+		this.coreFonts.put(FontFamily.ARIAL.getBoldKey(), "Arial-Bold"); 
+		this.coreFonts.put(FontFamily.ARIAL.getItalicKey(), "Arial-Oblique"); 
+		this.coreFonts.put(FontFamily.ARIAL.getBoldItalicKey(), "Arial-BoldOblique"); 
 		this.coreFonts.put(FontFamily.COURIER.getKey(), "Courier"); 
 		this.coreFonts.put(FontFamily.COURIER.getBoldKey(), "Courier-Bold"); 
 		this.coreFonts.put(FontFamily.COURIER.getItalicKey(), "Courier-Oblique"); 
@@ -403,7 +411,7 @@ public class FPDF {
 		this.state = PDFCreationState.PAGE;
 		this.x = this.lMargin;
 		this.y = this.tMargin;
-		this.fontFamily = ""; 
+		this.fontFamily = null; 
 		// Page orientation
 		if (!orientation.equals(this.defaultOrientation)) {
 			this.orientationChanges.put(Integer.valueOf(this.page), Boolean.TRUE);
@@ -489,10 +497,11 @@ public class FPDF {
 	}
 
 	/** Begin a new object */
-	protected void _newobj() {
+	protected int _newobj() {
 		this.n++;
 		this.offsets.put(Integer.valueOf(this.n), Integer.valueOf(this._length(this.buffer)));
-		this._out(this.n + " 0 obj"); 
+		this._out(this.n + " 0 obj");
+		return this.n;
 	}
 
 	protected int _length(final List<byte[]> buffer) {
@@ -556,6 +565,40 @@ public class FPDF {
 	}
 
 	protected void _putfonts() {
+		for(String diff : this.diffs.values()) {
+			// Encodings
+			this._newobj();
+			this._out("<</Type /Encoding /BaseEncoding /WinAnsiEncoding /Differences [" + diff + "]>>");
+			this._out("endobj");
+		}
+		
+		for(String k : this.fonts.keySet()) {
+			Font font = this.fonts.get(k);
+			if (font.embed != null) {
+				// Font file embedding
+				this._newobj();
+				int n = this.n;
+				font.setFileindex(n);
+				byte[] data;
+				if (this.compress) {
+					data = Compressor.compress(font.embed.data);
+				} else {
+					data = font.embed.data;
+				}
+				
+				this._out("<</Length " + data.length);
+				if(this.compress)
+					this._out("/Filter /FlateDecode");
+				this._out("/Length1 " + font.embed.size1);
+				if(font.embed.size2 != 0) {
+					this._out("/Length2 " + font.embed.size2 + " /Length3 0");
+				}
+				this._out(">>");
+				this._putstream(_stringifyzip(data));
+				this._out("endobj");
+			}
+		}
+		
 		for (String k : this.fonts.keySet()) {
 			Font font = this.fonts.get(k);
 			// Font objects
@@ -574,8 +617,41 @@ public class FPDF {
 				}
 				this._out(">>"); 
 				this._out("endobj"); 
+			} else if(font.getType() == Type.TYPE1 || font.getType() == Type.TTF) {
+				// Additional Type1 or TrueType/OpenType font
+				this._newobj();
+				this._out("<</Type /Font");
+				this._out("/BaseFont /" + font.getName());
+				this._out("/Subtype /" + font.getType().toPdfString());
+				this._out("/FirstChar 32 /LastChar 255");
+				this._out("/Widths " + (this.n + 1) + " 0 R");
+				this._out("/FontDescriptor " + (this.n + 2) + " 0 R");
+//				if(isset(font["diffn"]))
+//					this._out("/Encoding " + (nf + $font['diffn'])." 0 R");
+//				else
+					this._out("/Encoding /WinAnsiEncoding");
+				this._out(">>");
+				this._out("endobj");
+				
+				// Widths
+				this._newobj();
+				String s = "[";
+				for(int i = 32; i <= 255; i++)
+					s += Integer.toString(font.embed.Widths[i]) + " ";
+				this._out(s + "]");
+				this._out("endobj");
+				
+				// Descriptor
+				this._newobj();
+				s = "<</Type /FontDescriptor /FontName /" + font.getName();				
+				Set<Entry<String, String>> fontDescription = font.embed.MakeFontDescriptor().entrySet();
+				for(Entry<String, String> descKey : fontDescription)
+					s += " /" + descKey.getKey() + " " + descKey.getValue();
+				if(fonts.containsKey(font.getName()))
+					s += " /FontFile" + ((font.getType() == Type.TYPE1) ? "" : "2") + " " + (font.getFileindex()) + " 0 R";
+				this._out(s + ">>");
+				this._out("endobj");
 			}
-			// FIXME no support for embedded or user fonts!
 		}
 	}
 
@@ -2362,6 +2438,7 @@ public class FPDF {
 		this.setFillColor(new Color(r, g, b));
 	}
         
+
 	/**
 	 * Select a font; size given in points.
 	 * 
@@ -2373,9 +2450,9 @@ public class FPDF {
 	 *             if the font family is invalid.
 	 */
 	public void setFont(FontFamily family, float size) throws IOException {
-            setFont(family.getKey(), null, size);
-        }
-
+		setFont(family, (FontStyle) null, size);
+	}
+	
 	/**
 	 * Select a font; size given in points.
 	 * 
@@ -2389,11 +2466,11 @@ public class FPDF {
 	 *             if the font family is invalid.
 	 */
 	public void setFont(FontFamily family, FontStyle style, float size) throws IOException {
-            LinkedHashSet<FontStyle> set = new LinkedHashSet<FontStyle>();
-            set.add(style);
-            
-            setFont(family.getKey(), set, size);
-        }
+		LinkedHashSet<FontStyle> set = new LinkedHashSet<>();
+		set.add(style);
+		
+		setFont(family.getKey(), set, size);
+	}
 
 	/**
 	 * Select a font; size given in points.
@@ -2408,9 +2485,9 @@ public class FPDF {
 	 *             if the font family is invalid.
 	 */
 	public void setFont(FontFamily family, Set<FontStyle> style, float size) throws IOException {
-            setFont(family.getKey(), style, size);
-        }
-
+		setFont(family.getKey(), style, size);
+	}
+	
 	/**
 	 * Select a font; size given in points.
 	 * 
@@ -2426,8 +2503,6 @@ public class FPDF {
 	public void setFont(String family, Set<FontStyle> style, float size) throws IOException {
 		if (family == null) {
 			family = this.fontFamily;
-		} else {
-			family = family.toLowerCase();
 		}
 		if (FontFamily.ARIAL.getKey().equals(family)) { 
 			family = FontFamily.HELVETICA.getKey(); 
@@ -2462,11 +2537,10 @@ public class FPDF {
 			// Check if one of the standard fonts
 			if (this.coreFonts.get(fontkey) != null) {
 				int i = this.fonts.size() + 1;
-				Font font = new Font(i, Font.Type.CORE, this.coreFonts.get(fontkey), -100, 50, getCharwidths(fontkey));
+				Font font = new Font(i, Font.Type.CORE, this.coreFonts.get(fontkey), -100, 50, getCharwidths(fontkey), null);
 				this.fonts.put(fontkey, font);
 			} else {
-				throw new IOException("Undefined font: " 
-						+ family + " " + style); 
+				throw new IOException("Undefined font: " + family + " " + style); 
 			}
 		}
 		// Select it
@@ -2710,5 +2784,27 @@ public class FPDF {
 		if (i != j) {
 			this.Cell(l / 1000 * this.fontSize, h, s.substring(j), null, null, null, false, link);
 		}
+	}
+
+	public FontFamily AddFont(String family, String style, File file)
+	{
+		// Add a TrueType, OpenType or Type1 font
+		family = family.toLowerCase();
+		style = style.toUpperCase();
+		if(style.equals("IB"))
+			style = "BI";
+		String fontkey = family + style;
+		if(this.fonts.containsKey(fontkey))
+			return null;
+		FontInfo info = this._loadfont(file);
+		info.index = fonts.size() + 1;
+		fonts.put(info.fontname, new Font(info.index, Type.TYPE1, info.fontname, info.UnderlinePosition, info.UnderlineThickness, new Charwidths(info.CharWidth), info));
+		return new FontFamily(info.fontname);
+	}
+	
+	private FontInfo _loadfont(File font)
+	{
+		FontInfoRequest rq = new FontInfoRequest(font);
+		return rq.info;
 	}
 }

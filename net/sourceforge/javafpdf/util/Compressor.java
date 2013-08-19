@@ -1,5 +1,12 @@
 package net.sourceforge.javafpdf.util;
 
+/**
+ * Compress and decompress a Byte array.
+ * 
+ * @author Christian
+ * 
+ */
+
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;

@@ -25,6 +25,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Map;
 import java.util.Properties;
 
 /**
@@ -38,7 +39,7 @@ class Charwidths {
 	private final Properties	props;
 
 	/**
-	 * Constructor. Creates a Charwidths object for a core font.
+	 * Constructor. Creates a Charwidths object for a core or custom font.
 	 * 
 	 * @param name
 	 *            name of the character widths file.
@@ -46,8 +47,7 @@ class Charwidths {
 	 *             if an error occurred when reading from the file.
 	 */
 	public Charwidths(final String name) throws IOException {
-		InputStream stream = this.getClass().getResourceAsStream(
-				"fonts/" + name + ".widths"); //$NON-NLS-1$//$NON-NLS-2$
+		InputStream stream = this.getClass().getResourceAsStream("fonts/" + name + ".widths");
 		this.props = new Properties();
 		this.props.load(stream);
 		stream.close();
@@ -67,14 +67,14 @@ class Charwidths {
 		this.props.load(stream);
 		stream.close();
 	}
+	
+	public Charwidths(Map<String, Integer> charWidths) {
+		props = new Properties();
+		for(String key : charWidths.keySet()) {
+			props.setProperty(key, charWidths.get(key).toString());
+		}
+	}
 
-	/**
-	 * Get the width of the given character.
-	 * 
-	 * @param c
-	 *            a character
-	 * @return the width of that character.
-	 */
 	public int get(final char c) {
 		String str = this.props.getProperty(Integer.valueOf(c).toString());
 		if (str == null) {

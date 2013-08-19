@@ -1,16 +1,16 @@
 package net.sourceforge.javafpdf;
 
-public enum FontFamily {
+public class FontFamily {
 
-    ARIAL("arial"), // arial == helvetica
-    COURIER("courier"),
-    HELVETICA("helvetica"),
-    TIMES("times"),
-    SYMBOL("symbol"),
-    ZAPF_DINGBATS("zapfdingbats");
+	public static final FontFamily ARIAL = new FontFamily("arial"); // arial == helvetica
+	public static final FontFamily COURIER = new FontFamily("courier");
+	public static final FontFamily HELVETICA = new FontFamily("helvetica");
+	public static final FontFamily TIMES = new FontFamily("times");
+	public static final FontFamily SYMBOL = new FontFamily("symbol");
+	public static final FontFamily ZAPF_DINGBATS = new FontFamily("zapfdingbats");
     private final String key;
 
-    private FontFamily(String key) {
+    public FontFamily(String key) {
         this.key = key;
     }
 

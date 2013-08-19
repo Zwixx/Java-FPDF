@@ -1,5 +1,7 @@
 package net.sourceforge.javafpdf;
 
+import net.sourceforge.javafpdf.util.FontInfo;
+
 /**
  * Font properties.
  * 
@@ -17,31 +19,48 @@ class Font {
 	 */
 	protected static enum Type {
 		/** Core font. */
-		CORE,
+		CORE("Type1"),
 		/** TrueType Font. */
-		TTF;
+		TTF("TTF"),
+		/** Postscript Type1 Font. */
+		TYPE1("Type1");
+		
+		private String pdfString;
+		
+		Type(String pdfString) {
+			this.pdfString = pdfString;
+		}
+
+		public String toPdfString() {
+			return this.pdfString;
+		}
 	}
 
 	/** Font index */
-	private final int			i;
+	private final int i;
 
 	/** Font number */
-	private int					n;
+	private int n;
+	
+	// File index
+	private int fileindex = 0;
 
 	/** Font type. */
-	private final Font.Type		type;
+	private final Font.Type type;
 
 	/** Font name. */
-	private final String		name;
+	private final String name;
 
 	/** Underline position. */
-	private final int			up;
+	private final int up;
 
 	/** Underline thickness. */
-	private final int			ut;
+	private final int ut;
 
 	/** Character widths. */
-	private final Charwidths	cw;
+	private final Charwidths cw;
+	
+	public final FontInfo embed;
 
 	/**
 	 * Constructor.
@@ -58,9 +77,10 @@ class Font {
 	 *            the underline thickness
 	 * @param cw
 	 *            the character widths
+	 * @param embed
+	 *            the custom, embedded font
 	 */
-	public Font(final int i, final Font.Type type, final String name,
-			final int up, final int ut, final Charwidths cw) {
+	public Font(final int i, final Font.Type type, final String name, final int up, final int ut, final Charwidths cw, FontInfo embed) {
 		this.i = i;
 		this.n = 0;
 		this.type = type;
@@ -68,6 +88,7 @@ class Font {
 		this.up = up;
 		this.ut = ut;
 		this.cw = cw;
+		this.embed = embed;
 	}
 
 	/**
@@ -142,4 +163,20 @@ class Font {
 	public Charwidths getCw() {
 		return this.cw;
 	}
+	
+	/**
+	 * Gets the index of the embedded File.
+	 * @return index if Fileobject
+	 */
+	public int getFileindex() {
+		return fileindex;
+	}
+
+	/**
+	 * Sets the index of the embedded File.
+	 */
+	public void setFileindex(int fileindex) {
+		this.fileindex = fileindex;
+	}
+
 }
