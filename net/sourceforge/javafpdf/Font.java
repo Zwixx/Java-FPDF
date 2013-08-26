@@ -1,5 +1,6 @@
 package net.sourceforge.javafpdf;
 
+import net.sourceforge.javafpdf.fonts.FontType;
 import net.sourceforge.javafpdf.util.FontInfo;
 
 /**
@@ -10,32 +11,6 @@ import net.sourceforge.javafpdf.util.FontInfo;
  * @version $Revision: 1.2 $
  */
 class Font {
-	/**
-	 * Font types.
-	 * 
-	 * @author Alan Plum
-	 * @since 4 Mar 2008
-	 * @version $Revision: 1.2 $
-	 */
-	protected static enum Type {
-		/** Core font. */
-		CORE("Type1"),
-		/** TrueType Font. */
-		TTF("TTF"),
-		/** Postscript Type1 Font. */
-		TYPE1("Type1");
-		
-		private String pdfString;
-		
-		Type(String pdfString) {
-			this.pdfString = pdfString;
-		}
-
-		public String toPdfString() {
-			return this.pdfString;
-		}
-	}
-
 	/** Font index */
 	private final int i;
 
@@ -46,7 +21,7 @@ class Font {
 	private int fileindex = 0;
 
 	/** Font type. */
-	private final Font.Type type;
+	private final FontType type;
 
 	/** Font name. */
 	private final String name;
@@ -80,7 +55,7 @@ class Font {
 	 * @param embed
 	 *            the custom, embedded font
 	 */
-	public Font(final int i, final Font.Type type, final String name, final int up, final int ut, final Charwidths cw, FontInfo embed) {
+	public Font(final int i, final FontType type, final String name, final int up, final int ut, final Charwidths cw, FontInfo embed) {
 		this.i = i;
 		this.n = 0;
 		this.type = type;
@@ -124,7 +99,7 @@ class Font {
 	 * 
 	 * @return the type
 	 */
-	public Font.Type getType() {
+	public FontType getType() {
 		return this.type;
 	}
 

@@ -4,6 +4,8 @@ import java.awt.Rectangle;
 import java.util.HashMap;
 import java.util.Map;
 
+import net.sourceforge.javafpdf.fonts.FontType;
+
 public class FontInfo {
 	public String fontname;
 	public int size1;
@@ -26,6 +28,7 @@ public class FontInfo {
 	public int index;
 	public Boolean embed;
 	public String diff;
+	public FontType type;
 	
 	public Map<String, String> MakeFontDescriptor() {
 		Map<String, String> result = new HashMap<>();

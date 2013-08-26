@@ -37,7 +37,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
-import net.sourceforge.javafpdf.Font.Type;
+import net.sourceforge.javafpdf.fonts.FontType;
 import net.sourceforge.javafpdf.util.Compressor;
 import net.sourceforge.javafpdf.util.FontInfo;
 import net.sourceforge.javafpdf.util.FontInfoRequest;
@@ -603,9 +603,9 @@ public class FPDF {
 			Font font = this.fonts.get(k);
 			// Font objects
 			this.fonts.get(k).setN(this.n + 1);
-			Font.Type type = font.getType();
+			FontType type = font.getType();
 			String name = font.getName();
-			if (type == Font.Type.CORE) {
+			if (type == FontType.CORE) {
 				// Standard font
 				this._newobj();
 				this._out("<</Type /Font"); 
@@ -617,7 +617,7 @@ public class FPDF {
 				}
 				this._out(">>"); 
 				this._out("endobj"); 
-			} else if(font.getType() == Type.TYPE1 || font.getType() == Type.TTF) {
+			} else if(font.getType() == FontType.TYPE1 || font.getType() == FontType.TTF) {
 				// Additional Type1 or TrueType/OpenType font
 				this._newobj();
 				this._out("<</Type /Font");
@@ -648,7 +648,7 @@ public class FPDF {
 				for(Entry<String, String> descKey : fontDescription)
 					s += " /" + descKey.getKey() + " " + descKey.getValue();
 				if(fonts.containsKey(font.getName()))
-					s += " /FontFile" + ((font.getType() == Type.TYPE1) ? "" : "2") + " " + (font.getFileindex()) + " 0 R";
+					s += " /FontFile" + ((font.getType() == FontType.TYPE1) ? "" : "2") + " " + (font.getFileindex()) + " 0 R";
 				this._out(s + ">>");
 				this._out("endobj");
 			}
@@ -2537,7 +2537,7 @@ public class FPDF {
 			// Check if one of the standard fonts
 			if (this.coreFonts.get(fontkey) != null) {
 				int i = this.fonts.size() + 1;
-				Font font = new Font(i, Font.Type.CORE, this.coreFonts.get(fontkey), -100, 50, getCharwidths(fontkey), null);
+				Font font = new Font(i, FontType.CORE, this.coreFonts.get(fontkey), -100, 50, getCharwidths(fontkey), null);
 				this.fonts.put(fontkey, font);
 			} else {
 				throw new IOException("Undefined font: " + family + " " + style); 
@@ -2798,7 +2798,7 @@ public class FPDF {
 			return null;
 		FontInfo info = this._loadfont(file);
 		info.index = fonts.size() + 1;
-		fonts.put(info.fontname, new Font(info.index, Type.TYPE1, info.fontname, info.UnderlinePosition, info.UnderlineThickness, new Charwidths(info.CharWidth), info));
+		fonts.put(info.fontname, new Font(info.index, info.type, info.fontname, info.UnderlinePosition, info.UnderlineThickness, new Charwidths(info.CharWidth), info));
 		return new FontFamily(info.fontname);
 	}
 	
